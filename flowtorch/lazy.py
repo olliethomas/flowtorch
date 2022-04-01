@@ -34,16 +34,16 @@ def count_unbound(sig: inspect.Signature) -> int:
 
 
 class LazyMeta(type):
-    def __call__(cls: Any, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """
         Intercept instance creation
         """
         # Special behaviour for Lazy class
-        if cls.__qualname__ == "Lazy":
+        if self.__qualname__ == "Lazy":
             lazy_cls = args[0]
             args = args[1:]
         else:
-            lazy_cls = cls
+            lazy_cls = self
 
         # Remove first argument (i.e., self) from signature of class' initializer
         sig = inspect.signature(lazy_cls.__init__)
@@ -56,12 +56,11 @@ class LazyMeta(type):
         bound_sig, bindings = partial_signature(sig, *args, **kwargs)
 
         # If there are no unbound arguments then instantiate class
-        if not count_unbound(bound_sig):
-            return type.__call__(lazy_cls, *args, **kwargs)
-
-        # Otherwise, return Lazy instance
-        else:
-            return type.__call__(Lazy, lazy_cls, bindings, sig, bound_sig)
+        return (
+            type.__call__(Lazy, lazy_cls, bindings, sig, bound_sig)
+            if count_unbound(bound_sig)
+            else type.__call__(lazy_cls, *args, **kwargs)
+        )
 
 
 class Lazy(metaclass=LazyMeta):

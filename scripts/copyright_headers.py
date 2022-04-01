@@ -7,7 +7,7 @@ from enum import Enum
 
 from flowtorch.utils import copyright_header
 
-lines_header = ["# " + ln + "\n" for ln in copyright_header.splitlines()]
+lines_header = [f"# {ln}" + "\n" for ln in copyright_header.splitlines()]
 
 
 class ReadState(Enum):
@@ -39,12 +39,11 @@ def get_header(filename):
                     return "\n".join(header).strip(), line_idx, state
 
             elif state is ReadState.COMMENT:
-                if len(line) and line[0] == "#":
-                    header.append(line[1:].strip())
-                    continue
-                else:
+                if not len(line) or line[0] != "#":
                     return "\n".join(header).strip(), line_idx, state
 
+                header.append(line[1:].strip())
+                continue
             elif state is ReadState.TRIPLE_QUOTES:
                 if len(line) >= 3 and '"""' in line:
                     char_idx = line.find('"""')
@@ -126,7 +125,7 @@ if __name__ == "__main__":
         if (
             header != copyright_header
             or line_idx != 1
-            or not state == ReadState.COMMENT
+            or state != ReadState.COMMENT
         ):
             count_changed += 1
             if args.verbose:

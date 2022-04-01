@@ -70,29 +70,27 @@ def _walk_packages(
         onerror=lambda x: None,
     ):
         # Conditions required for mypy
-        if importer is not None:
-            if isinstance(importer, importlib.abc.MetaPathFinder):
-                finder = importer.find_module(this_modname, None)
-            elif isinstance(importer, importlib.abc.PathEntryFinder):
-                finder = importer.find_module(this_modname)
-        else:
+        if importer is None:
             finder = None
 
+        elif isinstance(importer, importlib.abc.MetaPathFinder):
+            finder = importer.find_module(this_modname, None)
+        elif isinstance(importer, importlib.abc.PathEntryFinder):
+            finder = importer.find_module(this_modname)
         if finder is not None:
             module = finder.load_module(this_modname)
 
         else:
             raise Exception("Finder is none")
 
-        if module is not None:
-            this_classes = inspect.getmembers(module, filter)
-            classes.extend(this_classes)
-
-            del module
-            del finder
-
-        else:
+        if module is None:
             raise Exception("Module is none")
+
+        this_classes = inspect.getmembers(module, filter)
+        classes.extend(this_classes)
+
+        del module
+        del finder
 
     return classes
 

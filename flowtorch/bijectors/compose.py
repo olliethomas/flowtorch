@@ -35,8 +35,7 @@ class Compose(Bijector):
 
     def parameters(self) -> Iterator[torch.Tensor]:
         for b in self.bijectors:
-            for param in b.parameters():  # type: ignore
-                yield param
+            yield from b.parameters()
 
     def forward(
         self,
@@ -125,10 +124,7 @@ class Compose(Bijector):
             _use_cached_inverse = False
 
         for bijector in reversed(self.bijectors):
-            if not _use_cached_inverse:
-                y_inv = bijector.inverse(y, context)  # type: ignore
-            else:
-                y_inv = parents.pop()
+            y_inv = parents.pop() if _use_cached_inverse else bijector.inverse(y, context)
             ldj += bijector.log_abs_det_jacobian(y_inv, y, context)  # type: ignore
             y = y_inv
         return ldj

@@ -102,7 +102,4 @@ class Spline(Bijector):
         s1 = torch.Size(shape + (self.count_bins,))
         s2 = torch.Size(shape + (self.count_bins - 1,))
 
-        if self.order == "linear":
-            return s1, s1, s2, s1
-        else:
-            return s1, s1, s2
+        return (s1, s1, s2, s1) if self.order == "linear" else (s1, s1, s2)

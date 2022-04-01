@@ -24,8 +24,7 @@ def flow(request):
         dist.Normal(torch.zeros(event_shape), torch.ones(event_shape)), event_dim
     )
 
-    flow = Flow(base_dist, bij)
-    return flow
+    return Flow(base_dist, bij)
 
 
 def test_jacobian(flow, epsilon=1e-2):

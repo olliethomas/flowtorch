@@ -51,8 +51,7 @@ class Bijector(metaclass=flowtorch.LazyMeta):
     def parameters(self) -> Iterator[torch.Tensor]:
         assert self._params_fn is not None
         if hasattr(self._params_fn, "parameters"):
-            for param in self._params_fn.parameters():
-                yield param
+            yield from self._params_fn.parameters()
 
     def _check_bijective_x(
         self, x: torch.Tensor, context: Optional[torch.Tensor]
@@ -200,7 +199,7 @@ class Bijector(metaclass=flowtorch.LazyMeta):
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + "()"
+        return f'{self.__class__.__name__}()'
 
     def forward_shape(self, shape: torch.Size) -> torch.Size:
         """

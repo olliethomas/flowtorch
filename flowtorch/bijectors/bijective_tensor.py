@@ -9,12 +9,11 @@ from torch import Tensor
 
 class BijectiveTensor(Tensor):
     def __repr__(self) -> str:
-        r_str = (
+        return (
             super(BijectiveTensor, self)
             .__repr__()
             .replace("tensor", "bijective_tensor")
         )
-        return r_str
 
     def register(
         self,
@@ -56,8 +55,7 @@ or `'inverse'`. got {self._mode}"
         return Tensor.__torch_function__(func, types, args, kwargs)
 
     def check_bijector(self, bijector: "Bijector") -> bool:
-        is_bijector = bijector in tuple(self.bijectors())
-        return is_bijector
+        return bijector in tuple(self.bijectors())
 
     def bijectors(self) -> Iterator["Bijector"]:
         yield self._bijector
@@ -110,10 +108,7 @@ or `'inverse'`. got {self._mode}"
 
     @property
     def parent(self) -> Tensor:
-        if self.from_forward():
-            return self._input
-        else:
-            return self._output
+        return self._input if self.from_forward() else self._output
 
     def parents(self) -> Iterator[Tensor]:
         child: Union[Tensor, BijectiveTensor] = self

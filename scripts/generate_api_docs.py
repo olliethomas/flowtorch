@@ -40,7 +40,7 @@ collapsed: {'true'},\
 
 
 def fullname(key, item):
-    return key + "." + item
+    return f'{key}.{item}'
 
 
 def dfs(dict):
@@ -71,7 +71,7 @@ def generate_markdown(article_name: str, symbol_name: str, entity: Any) -> str:
     The overview for the entire API is a special case
     """
 
-    if symbol_name == "":
+    if not symbol_name:
         header = """---
 id: overview
 sidebar_label: "Overview"
@@ -100,21 +100,6 @@ out in the future.
 id: {item['id']}
 sidebar_label: {item['sidebar_label']}
 ---"""
-
-    # Convert symbol to MDX
-
-    # Imports for custom styling components
-    markdown = [
-        """import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons'
-import PythonClass from "@theme/PythonClass";
-import PythonFunction from "@theme/PythonFunction";
-import PythonMethod from "@theme/PythonMethod";
-import PythonModule from "@theme/PythonModule";
-import PythonNavbar from "@theme/PythonNavbar";
-"""
-    ]
-
     # Make URL
     entity_file = (
         entity.__file__ if ismodule(entity) else inspect.getmodule(entity).__file__
@@ -125,12 +110,15 @@ import PythonNavbar from "@theme/PythonNavbar";
         + entity_file[(len(main_path) + 1) :].replace("\\", "/")
     )
 
-    # Make navigation bar
-    markdown.append(f"<PythonNavbar url='{url}'>\n")
+    markdown = [
+        """import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'\x1fimport { faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons'\x1fimport PythonClass from "@theme/PythonClass";\x1fimport PythonFunction from "@theme/PythonFunction";\x1fimport PythonMethod from "@theme/PythonMethod";\x1fimport PythonModule from "@theme/PythonModule";\x1fimport PythonNavbar from "@theme/PythonNavbar";\x1f""",
+        f"<PythonNavbar url='{url}'>\n",
+    ]
+
     navigation = []
     symbol_splits = symbol_name.split(".")
     for idx in range(len(symbol_splits)):
-        partial_symbol_name = ".".join(symbol_splits[0 : (idx + 1)])
+        partial_symbol_name = ".".join(symbol_splits[:idx + 1])
         if idx == len(symbol_splits) - 1:
             navigation.append(f"*{symbol_splits[idx]}*")
         elif partial_symbol_name in symbol_to_article:
@@ -140,10 +128,14 @@ import PythonNavbar from "@theme/PythonNavbar";
         else:
             navigation.append(f"{symbol_splits[idx]}")
 
-    markdown.append(
-        ' <FontAwesomeIcon icon={faAngleDoubleRight} size="sm" /> '.join(navigation)
+    markdown.extend(
+        (
+            ' <FontAwesomeIcon icon={faAngleDoubleRight} size="sm" /> '.join(
+                navigation
+            ),
+            "\n</PythonNavbar>\n",
+        )
     )
-    markdown.append("\n</PythonNavbar>\n")
 
     # Handle known symbol types
     if isclass(entity):
@@ -212,9 +204,12 @@ def search_symbols(config):
             new_y1 = [
                 (a, b)
                 for a, b in y[1]
-                if patterns["include"]["symbols"].fullmatch(x + "." + a) is not None
-                and patterns["exclude"]["symbols"].fullmatch(x + "." + a) is None
+                if patterns["include"]["symbols"].fullmatch(f'{x}.{a}')
+                is not None
+                and patterns["exclude"]["symbols"].fullmatch(f'{x}.{a}')
+                is None
             ]
+
 
             tmp[x] = (y[0], new_y1)
 
@@ -243,7 +238,7 @@ def construct_article_list(modules_and_symbols):
 
             suffix = 0
             for symbol_name, symbol in symbols:
-                full_name = mod_name + "." + symbol_name
+                full_name = f'{mod_name}.{symbol_name}'
                 article_name = full_name.lower()
 
                 # Find a unique name

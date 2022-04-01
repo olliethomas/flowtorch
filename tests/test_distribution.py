@@ -18,8 +18,7 @@ def test_tdist_standalone():
             torch.distributions.Normal(torch.zeros(input_dim), torch.ones(input_dim)), 1
         )
         bijector = bijs.AffineAutoregressive()
-        tdist = dist.Flow(base_dist, bijector)
-        return tdist
+        return dist.Flow(base_dist, bijector)
 
     tdist = make_tdist()
     tdist.log_prob(torch.randn(input_dim))  # should run without error

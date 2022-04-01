@@ -40,12 +40,8 @@ def get_decorators(function: Callable) -> Sequence[str]:
 
 
 def generate_class_markdown(symbol_name: str, entity: Any) -> str:
-    markdown = []
-
     # Parents (for classes, this is like signature)
-    parents = []
-    for b in entity.__bases__:
-        parents.append(b.__module__ + "." + b.__name__)
+    parents = [f'{b.__module__}.{b.__name__}' for b in entity.__bases__]
     parents_str = ", ".join(parents)
 
     # Docstring
@@ -56,23 +52,17 @@ def generate_class_markdown(symbol_name: str, entity: Any) -> str:
     # short_summary = "```short summary```\n"
     safe_name = symbol_name.replace("_", r"\_")
 
-    # Create top section for class
-    markdown.append("<PythonClass>\n")
-    markdown.append(
+    markdown = [
+        "<PythonClass>\n",
         """<div className="doc-class-row">
 <div className="doc-class-label"><span className="doc-symbol-label">class</span></div>
-<div className="doc-class-signature">\n"""
-    )
-    markdown.append(
-        f"""## <span className="doc-symbol-name">{safe_name}</span> {{#class}}"""
-    )
-    markdown.append(
+<div className="doc-class-signature">\n""",
+        f"""## <span className="doc-symbol-name">{safe_name}</span> {{#class}}""",
         f"""<span className="doc-inherits-from">Inherits from: <span className=\
-"doc-symbol-name">{parents_str}</span></span>\n"""
-    )
-    # markdown.append(short_summary)
-    markdown.append("</div>\n</div>\n\n</PythonClass>\n")
-    markdown.append(f"```\n{docstring}\n```\n")
+"doc-symbol-name">{parents_str}</span></span>\n""",
+        "</div>\n</div>\n\n</PythonClass>\n",
+        f"```\n{docstring}\n```\n",
+    ]
 
     # Methods for class
     members = inspect.getmembers(entity, predicate=inspect.isroutine)
@@ -92,15 +82,13 @@ def generate_class_markdown(symbol_name: str, entity: Any) -> str:
         except Exception:
             pass
 
-        # TODO: Prepend decorators to method name
-        # for d in decorators:
-        #    member_strs.append(d)
-
-        markdown.append("<PythonMethod>\n")
-        markdown.append(
-            """<div className="doc-method-row">
+        markdown.extend(
+            (
+                "<PythonMethod>\n",
+                """<div className="doc-method-row">
 <div className="doc-method-label"><span className="doc-symbol-label">member</span></div>
-<div className="doc-method-signature">\n"""
+<div className="doc-method-signature">\n""",
+            )
         )
 
         # Some built-ins don't have a signature and throw exception...
@@ -116,15 +104,15 @@ def generate_class_markdown(symbol_name: str, entity: Any) -> str:
 
         safe_member_name = member_name.replace("_", r"\_")
         safe_member_id = member_name.replace("_", "-")
-        markdown.append(
-            f"""###  <span className="doc-symbol-name">{safe_member_name}</span>\
- {{#{safe_member_id}}}\n"""
+        markdown.extend(
+            (
+                f"""###  <span className="doc-symbol-name">{safe_member_name}</span>\
+ {{#{safe_member_id}}}\n""",
+                f"""<span className="doc-symbol-signature">{safe_member_signature}\
+</span>\n""",
+                "</div>\n</div>\n\n</PythonMethod>\n",
+            )
         )
-        markdown.append(
-            f"""<span className="doc-symbol-signature">{safe_member_signature}\
-</span>\n"""
-        )
-        markdown.append("</div>\n</div>\n\n</PythonMethod>\n")
 
         member_docstring = (
             member_object.__doc__
@@ -140,8 +128,6 @@ def generate_class_markdown(symbol_name: str, entity: Any) -> str:
 
 
 def generate_module_markdown(symbol_name: str, entity: Any) -> str:
-    markdown = []
-
     # Docstring
     # TODO: Parse docstring and extract short summary
     docstring = entity.__doc__ if entity.__doc__ is not None else "empty docstring"
@@ -150,27 +136,20 @@ def generate_module_markdown(symbol_name: str, entity: Any) -> str:
     # short_summary = "```short summary```\n"
     safe_name = symbol_name.replace("_", r"\_")
 
-    # Create top section for class
-    markdown.append("<PythonModule>\n")
-    markdown.append(
+    markdown = [
+        "<PythonModule>\n",
         """<div className="doc-module-row">
 <div className="doc-module-label"><span className="doc-symbol-label">module</span></div>
-<div className="doc-module-signature">\n"""
-    )
-
-    markdown.append(
-        f"""## <span className="doc-symbol-name">{safe_name}</span> {{#module}}\n"""
-    )
-    # markdown.append(short_summary)
-    markdown.append("</div>\n</div>\n\n</PythonModule>\n")
-    markdown.append(f"```\n{docstring}\n```\n")
+<div className="doc-module-signature">\n""",
+        f"""## <span className="doc-symbol-name">{safe_name}</span> {{#module}}\n""",
+        "</div>\n</div>\n\n</PythonModule>\n",
+        f"```\n{docstring}\n```\n",
+    ]
 
     return "\n".join(markdown)
 
 
 def generate_function_markdown(symbol_name: str, entity: Any) -> str:
-    markdown = []
-
     # Docstring
     # TODO: Parse docstring and extract short summary
     docstring = entity.__doc__ if entity.__doc__ is not None else "empty docstring"
@@ -198,24 +177,18 @@ def generate_function_markdown(symbol_name: str, entity: Any) -> str:
     safe_name = symbol_name.replace("_", r"\_")
     safe_signature = entity_signature.replace("<", "&lt;").replace(">", "&gt;")
 
-    markdown.append("<PythonFunction>\n")
-    markdown.append(
+    markdown = [
+        "<PythonFunction>\n",
         """<div className="doc-function-row">
 <div className="doc-function-label"><span className="doc-symbol-label">function\
 </span></div>
-<div className="doc-function-signature">\n"""
-    )
-
-    markdown.append(
+<div className="doc-function-signature">\n""",
         f"""## <span className="doc-symbol-name">{safe_name}</span> \
-{{#function}}\n"""
-    )
-    markdown.append(
-        f"""<span className="doc-symbol-signature">{safe_signature}</span>"""
-    )
-    # markdown.append(short_summary)
-    markdown.append("</div>\n</div>\n\n</PythonFunction>\n")
-    markdown.append(f"```\n{docstring}\n```\n")
+{{#function}}\n""",
+        f"""<span className="doc-symbol-signature">{safe_signature}</span>""",
+        "</div>\n</div>\n\n</PythonFunction>\n",
+        f"```\n{docstring}\n```\n",
+    ]
 
     return "\n".join(markdown)
 
@@ -258,29 +231,27 @@ def walk_packages(
         onerror=lambda x: None,
     ):
         # Conditions required for mypy
-        if importer is not None:
-            if isinstance(importer, importlib.abc.MetaPathFinder):
-                finder = importer.find_module(this_modname, None)
-            elif isinstance(importer, importlib.abc.PathEntryFinder):
-                finder = importer.find_module(this_modname)
-        else:
+        if importer is None:
             finder = None
 
+        elif isinstance(importer, importlib.abc.MetaPathFinder):
+            finder = importer.find_module(this_modname, None)
+        elif isinstance(importer, importlib.abc.PathEntryFinder):
+            finder = importer.find_module(this_modname)
         if finder is not None:
             module = finder.load_module(this_modname)
 
         else:
             raise Exception("Finder is none")
 
-        if module is not None:
-            # Get all classes and functions imported/defined in module
-            modules[this_modname] = (module, documentable_symbols(module))
-
-            del module
-            del finder
-
-        else:
+        if module is None:
             raise Exception("Module is none")
+
+        # Get all classes and functions imported/defined in module
+        modules[this_modname] = (module, documentable_symbols(module))
+
+        del module
+        del finder
 
     return modules
 
@@ -295,8 +266,8 @@ def sparse_module_hierarchy(mod_names: Sequence[str]) -> Mapping[str, Any]:
         submodules = module.split(".")
 
         # Navigate to the correct insertion place for this module
-        for idx in range(0, len(submodules)):
-            submodule = ".".join(submodules[0 : (idx + 1)])
+        for idx in range(len(submodules)):
+            submodule = ".".join(submodules[:idx + 1])
             if submodule in this_dict:
                 this_dict = this_dict[submodule]
 

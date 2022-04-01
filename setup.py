@@ -66,7 +66,7 @@ setup(
     ],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires=">={}.{}".format(REQUIRED_MAJOR, REQUIRED_MINOR),
+    python_requires=f">={REQUIRED_MAJOR}.{REQUIRED_MINOR}",
     install_requires=[
         "torch>=1.8.1",
     ],

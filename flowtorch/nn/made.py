@@ -24,12 +24,11 @@ def sample_mask_indices(
         # Simple procedure tries to space fractional indices evenly by rounding
         # to nearest int
         return torch.round(indices)
-    else:
-        # "Non-simple" procedure creates fractional indices evenly then rounds
-        # at random
-        ints = indices.floor()
-        ints += torch.bernoulli(indices - ints)
-        return ints
+    # "Non-simple" procedure creates fractional indices evenly then rounds
+    # at random
+    ints = indices.floor()
+    ints += torch.bernoulli(indices - ints)
+    return ints
 
 
 def create_mask(
@@ -82,12 +81,13 @@ def create_mask(
             var_index
         )
     ]
-    for i in range(1, len(hidden_dims)):
-        masks.append(
-            (
-                hidden_indices[i].unsqueeze(-1) >= hidden_indices[i - 1].unsqueeze(0)
-            ).type_as(var_index)
-        )
+    masks.extend(
+        (
+            hidden_indices[i].unsqueeze(-1)
+            >= hidden_indices[i - 1].unsqueeze(0)
+        ).type_as(var_index)
+        for i in range(1, len(hidden_dims))
+    )
 
     # Create mask from last hidden layer to output layer
     masks.append(

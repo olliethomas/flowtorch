@@ -44,11 +44,9 @@ class Flow(torch.nn.Module, dist.Distribution, metaclass=flowtorch.LazyMeta):
         )
 
     def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
-        for p in super().parameters(recurse=recurse):
-            yield p
+        yield from super().parameters(recurse=recurse)
         if recurse:
-            for p in self.bijector.parameters():  # type: ignore
-                yield p
+            yield from self.bijector.parameters()
 
     def condition(self, context: torch.Tensor) -> "Flow":
         self._context = context

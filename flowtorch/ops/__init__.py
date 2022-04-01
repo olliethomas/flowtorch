@@ -211,10 +211,6 @@ def monotonic_rational_spline(
                 + wb * wc * (1 - input_lambdas) * (yb - yc) * (inputs > yc).float()
             ) * input_widths
 
-            logabsdet = torch.log(derivative_numerator) - 2 * torch.log(
-                torch.abs(denominator)
-            )
-
         else:
             theta = (inputs - input_cumwidths) / input_widths
 
@@ -241,58 +237,56 @@ def monotonic_rational_spline(
                 * (theta > input_lambdas).float()
             ) / input_widths
 
-            logabsdet = torch.log(derivative_numerator) - 2 * torch.log(
-                torch.abs(denominator)
-            )
+        logabsdet = torch.log(derivative_numerator) - 2 * torch.log(
+            torch.abs(denominator)
+        )
 
-    # Calculate monotonic *quadratic* rational spline
+    elif inverse:
+        a = (inputs - input_cumheights) * (
+            input_derivatives + input_derivatives_plus_one - 2 * input_delta
+        ) + input_heights * (input_delta - input_derivatives)
+        b = input_heights * input_derivatives - (inputs - input_cumheights) * (
+            input_derivatives + input_derivatives_plus_one - 2 * input_delta
+        )
+        c = -input_delta * (inputs - input_cumheights)
+
+        discriminant = b.pow(2) - 4 * a * c
+        assert (discriminant >= 0).all()
+
+        root = (2 * c) / (-b - torch.sqrt(discriminant))
+        outputs = root * input_widths + input_cumwidths
+
+        theta_one_minus_theta = root * (1 - root)
+        denominator = input_delta + (
+            (input_derivatives + input_derivatives_plus_one - 2 * input_delta)
+            * theta_one_minus_theta
+        )
+        derivative_numerator = input_delta.pow(2) * (
+            input_derivatives_plus_one * root.pow(2)
+            + 2 * input_delta * theta_one_minus_theta
+            + input_derivatives * (1 - root).pow(2)
+        )
+        logabsdet = -(torch.log(derivative_numerator) - 2 * torch.log(denominator))
+
     else:
-        if inverse:
-            a = (inputs - input_cumheights) * (
-                input_derivatives + input_derivatives_plus_one - 2 * input_delta
-            ) + input_heights * (input_delta - input_derivatives)
-            b = input_heights * input_derivatives - (inputs - input_cumheights) * (
-                input_derivatives + input_derivatives_plus_one - 2 * input_delta
-            )
-            c = -input_delta * (inputs - input_cumheights)
+        theta = (inputs - input_cumwidths) / input_widths
+        theta_one_minus_theta = theta * (1 - theta)
 
-            discriminant = b.pow(2) - 4 * a * c
-            assert (discriminant >= 0).all()
+        numerator = input_heights * (
+            input_delta * theta.pow(2) + input_derivatives * theta_one_minus_theta
+        )
+        denominator = input_delta + (
+            (input_derivatives + input_derivatives_plus_one - 2 * input_delta)
+            * theta_one_minus_theta
+        )
+        outputs = input_cumheights + numerator / denominator
 
-            root = (2 * c) / (-b - torch.sqrt(discriminant))
-            outputs = root * input_widths + input_cumwidths
-
-            theta_one_minus_theta = root * (1 - root)
-            denominator = input_delta + (
-                (input_derivatives + input_derivatives_plus_one - 2 * input_delta)
-                * theta_one_minus_theta
-            )
-            derivative_numerator = input_delta.pow(2) * (
-                input_derivatives_plus_one * root.pow(2)
-                + 2 * input_delta * theta_one_minus_theta
-                + input_derivatives * (1 - root).pow(2)
-            )
-            logabsdet = -(torch.log(derivative_numerator) - 2 * torch.log(denominator))
-
-        else:
-            theta = (inputs - input_cumwidths) / input_widths
-            theta_one_minus_theta = theta * (1 - theta)
-
-            numerator = input_heights * (
-                input_delta * theta.pow(2) + input_derivatives * theta_one_minus_theta
-            )
-            denominator = input_delta + (
-                (input_derivatives + input_derivatives_plus_one - 2 * input_delta)
-                * theta_one_minus_theta
-            )
-            outputs = input_cumheights + numerator / denominator
-
-            derivative_numerator = input_delta.pow(2) * (
-                input_derivatives_plus_one * theta.pow(2)
-                + 2 * input_delta * theta_one_minus_theta
-                + input_derivatives * (1 - theta).pow(2)
-            )
-            logabsdet = torch.log(derivative_numerator) - 2 * torch.log(denominator)
+        derivative_numerator = input_delta.pow(2) * (
+            input_derivatives_plus_one * theta.pow(2)
+            + 2 * input_delta * theta_one_minus_theta
+            + input_derivatives * (1 - theta).pow(2)
+        )
+        logabsdet = torch.log(derivative_numerator) - 2 * torch.log(denominator)
 
     # Apply the identity function outside the bounding box
     outputs[outside_interval_mask] = inputs[outside_interval_mask]
